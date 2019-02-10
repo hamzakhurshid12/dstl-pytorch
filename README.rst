@@ -1,3 +1,10 @@
+NOTE
+====
+
+This respoitory is a clone of lupuhin's repository.
+https://github.com/lopuhin/kaggle-dstl
+
+
 DSTL
 ====
 
