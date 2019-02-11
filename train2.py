@@ -140,7 +140,7 @@ class Model:
         self.tb_logger = tensorboard_logger.Logger(str(logdir))
         self.logdir = logdir
         print("Length of train_ids=",len(train_ids))
-        train_ids=train_ids[:18] #for limited RAM JG
+        #train_ids=train_ids[:18] #for limited RAM JG
         train_images = [self.load_image(im_id) for im_id in sorted(train_ids)]
         valid_images = None
         if model_path:
@@ -186,7 +186,7 @@ class Model:
                     else:
                         valid_images = [self.load_image(im_id)
                                         for im_id in sorted(valid_ids)]
-                        valid_images = valid_images[:2] #JG
+                        #valid_images = valid_images[:2] #JG
                 if valid_images:
                     self.validate_on_images(valid_images, subsample=1)
             if valid_only:
@@ -358,21 +358,21 @@ class Model:
                     self._log_value(
                         'loss/cls-mean', np.mean([
                             l for ls in losses for l in ls[-log_step:]]))
-                #pred_y = self.net(self._var(x)).data.cpu() #line 77 JG
+                pred_y = self.net(self._var(x)).data.cpu() #line 77 JG
                 #self.batch_correct = (y.eq(pred_y)).double().sum().item() #JG
                 #self.total_count=pred_y.size(0) #JG
-                print('Accuracy is: {}/{}\n'.format(self.batch_correct,self.total_count)) #JG
-                self.batch_correct=0 #JG
-                self.total_count=0 #JG
+                #print('Accuracy is: {}/{}, {}%\n'.format(self.batch_correct,self.total_count,(self.batch_correct*100/self.total_count))) #JG
+                #self.batch_correct=0 #JG
+                #self.total_count=0 #JG
                 self._update_jaccard(jaccard_stats, y.numpy(), pred_y.numpy())
                 self._log_jaccard(jaccard_stats)
                 if i == im_log_step:
                     self._log_im(
                         x.numpy(), y.numpy(), dist_y.numpy(), pred_y.numpy())
 
-            pred_y = self.net(self._var(x)).data.cpu() #line 77 JG
-            self.batch_correct+= (y.eq(pred_y)).double().sum().item() #JG
-            self.total_count+=pred_y.size(0) #JG
+            #pred_y = self.net(self._var(x)).data.cpu() #line 77 JG
+            #self.batch_correct+= (y.eq(pred_y)).double().sum().item() #JG
+            #self.total_count+=pred_y.size(0) #JG
             step_losses = self.train_step(x, y, dist_y)
 
             for ls, l in zip(losses, step_losses):
@@ -383,6 +383,9 @@ class Model:
                 log()
                 jaccard_stats = self._jaccard_stats()
                 t0 = t1
+        #print('Accuracy is: {}/{}, {}%\n'.format(self.batch_correct,self.total_count,(self.batch_correct*100/self.total_count))) #JG
+        #self.batch_correct=0 #JG
+        #self.total_count=0 #JG
         if losses:
             log()
 
@@ -525,11 +528,13 @@ class Model:
                 for ls, l in zip(losses, step_losses):
                     ls.append(l.data[0])
                 y_pred_numpy = y_pred.data.cpu().numpy()
-            #pred_y = self.net(self._var(x)).data.cpu() #line 77 JG
-                self.batch_correct+= (outputs.eq(pred_y)).double().sum().item() #JG
-                self.total_count+=pred_y.size(0) #JG
+                self.batch_correct+= np.sum(outputs==y_pred_numpy) #JG
+                self.total_count+=y_pred_numpy.shape[0] #JG
                 self._update_jaccard(jaccard_stats, outputs, y_pred_numpy)
         losses = np.array(losses)
+        print('Accuracy is: {}/{} {}%\n'.format(self.batch_correct,self.total_count,(self.batch_correct*100/self.total_count))) #JG
+        self.batch_correct=0 #JG
+        self.total_count=0 #JG
         logger.info('Valid loss: {:.3f}, Jaccard: {}'.format(
             losses.mean(), self._format_jaccard(jaccard_stats)))
         for cls, cls_losses in zip(self.hps.classes, losses):
